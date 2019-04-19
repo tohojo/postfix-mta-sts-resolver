@@ -1,0 +1,16 @@
+FROM pypy:3-slim
+LABEL maintainer="Vladislav Yarmak <vladislav-ex-src@vm-0.com>"
+
+RUN apt-get update && apt-get install -y build-essential make && \
+    pip3 wheel --wheel-dir=/srv/wheels postfix-mta-sts-resolver uvloop
+
+FROM pypy:3-slim
+LABEL maintainer="Vladislav Yarmak <vladislav-ex-src@vm-0.com>"
+
+COPY --from=0 /srv/wheels /srv/wheels
+COPY docker-config.yml /etc/mta-sts-daemon.yml
+RUN pip3 install --no-cache-dir --no-index --find-links=/srv/wheels postfix-mta-sts-resolver uvloop
+
+VOLUME [ "/var/lib/mta-sts" ]
+EXPOSE 8461/tcp
+ENTRYPOINT [ "mta-sts-daemon", "-c", "/etc/mta-sts-daemon.yml" ]
